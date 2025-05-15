@@ -3,89 +3,95 @@
 #include <stdlib.h>
 #include "peminjam.h"
 
-// Fungsi untuk inisialisasi antrian peminjam
+/**
+ * Fungsi untuk inisialisasi antrian peminjam
+ */
 void initAntrian(AntrianPeminjam *aq) {
-    aq->head = NULL;  // Set head ke NULL (antrian kosong)
-    aq->tail = NULL;  // Set tail ke NULL (antrian kosong)
-    aq->size = 0;     // Inisialisasi ukuran antrian ke 0
+    aq->head = NULL;
+    aq->tail = NULL;
+    aq->size = 0;
 }
 
-// Fungsi untuk menambahkan peminjam ke antrian
+/**
+ * Fungsi untuk menambahkan peminjam ke antrian (enqueue at tail)
+ * Mengembalikan 1 jika berhasil, 0 jika gagal
+ */
 int enqueue(AntrianPeminjam *aq, const char *nama, Prioritas prioritas, Buku* buku) {
-    // Alokasi memori untuk peminjam baru
     PeminjamNode* newNode = (PeminjamNode*)malloc(sizeof(PeminjamNode));
     if (newNode == NULL) {
-        return 0;  // Mengembalikan 0 jika alokasi gagal
+        return 0;
     }
     
-    // Mengisi data peminjam baru
-    strncpy(newNode->nama, nama, MAX_NAMA - 1);  // Salin nama peminjam
-    newNode->nama[MAX_NAMA - 1] = '\0';          // Pastikan string diakhiri NULL
-    newNode->prioritas = prioritas;              // Set prioritas peminjam
-    newNode->buku = buku;                        // Set pointer ke buku
-    newNode->prev = NULL;                        // Inisialisasi pointer prev
-    newNode->next = NULL;                        // Inisialisasi pointer next
+    // Salin data peminjam
+    strncpy(newNode->nama, nama, MAX_NAMA - 1);
+    newNode->nama[MAX_NAMA - 1] = '\0';
+    newNode->prioritas = prioritas;
+    newNode->buku = buku;
+    newNode->next = NULL;
     
-    // Menambahkan peminjam ke antrian
+    // Tambahkan ke antrian
     if (aq->head == NULL) {
-        // Jika antrian kosong, peminjam baru menjadi head dan tail
         aq->head = newNode;
         aq->tail = newNode;
     } else {
-        // Jika antrian tidak kosong, tambahkan di akhir
-        aq->tail->next = newNode;  // Link dari tail ke peminjam baru
-        newNode->prev = aq->tail;  // Link prev peminjam baru ke tail lama
-        aq->tail = newNode;        // Update tail ke peminjam baru
+        aq->tail->next = newNode;
+        aq->tail = newNode;
     }
     
-    aq->size++;  // Increment ukuran antrian
-    return 1;    // Mengembalikan 1 untuk menandakan sukses
+    aq->size++;
+    return 1;
 }
 
-// Fungsi untuk mengeluarkan peminjam dengan prioritas tertinggi untuk buku tertentu
+/**
+ * Fungsi untuk mengeluarkan peminjam dengan prioritas tertinggi untuk buku tertentu
+ * Mengembalikan pointer ke peminjam yang dikeluarkan
+ */
 PeminjamNode* dequeue(AntrianPeminjam *aq, Buku* buku) {
     if (aq->head == NULL) {
-        return NULL;  // Mengembalikan NULL jika antrian kosong
+        return NULL;
     }
     
-    // Variabel untuk menyimpan peminjam dengan prioritas tertinggi
     PeminjamNode* highest = NULL;
+    PeminjamNode* prev = NULL;
     PeminjamNode* current = aq->head;
+    PeminjamNode* prevHighest = NULL;
     
-    // Iterasi untuk mencari peminjam dengan prioritas tertinggi untuk buku tertentu
+    // Cari peminjam dengan prioritas tertinggi untuk buku tertentu
     while (current != NULL) {
         if (current->buku == buku) {
             if (highest == NULL || current->prioritas < highest->prioritas) {
-                highest = current;  // Update highest jika ditemukan prioritas lebih tinggi
+                highest = current;
+                prevHighest = prev;
             }
         }
+        prev = current;
         current = current->next;
     }
     
     if (highest == NULL) {
-        return NULL;  // Tidak ada peminjam untuk buku ini
+        return NULL;
     }
     
-    // Hapus peminjam dari antrian
-    if (highest->prev != NULL) {
-        highest->prev->next = highest->next;
-    } else {
+    // Hapus node dari antrian
+    if (prevHighest == NULL) {
         aq->head = highest->next;
-    }
-    
-    if (highest->next != NULL) {
-        highest->next->prev = highest->prev;
     } else {
-        aq->tail = highest->prev;
+        prevHighest->next = highest->next;
     }
     
-    aq->size--;           // Decrement ukuran antrian
-    highest->prev = NULL; // Putus link prev
-    highest->next = NULL; // Putus link next
-    return highest;       // Mengembalikan peminjam yang dikeluarkan
+    // Update tail jika perlu
+    if (highest == aq->tail) {
+        aq->tail = prevHighest;
+    }
+    
+    aq->size--;
+    highest->next = NULL;
+    return highest;
 }
 
-// Fungsi untuk menampilkan daftar peminjam dalam antrian
+/**
+ * Fungsi untuk menampilkan daftar peminjam dalam antrian
+ */
 void tampilkanAntrian(const AntrianPeminjam *aq) {
     printf("Antrian Peminjam:\n");
     
@@ -96,10 +102,8 @@ void tampilkanAntrian(const AntrianPeminjam *aq) {
     
     PeminjamNode* current = aq->head;
     
-    // Iterasi dan tampilkan semua peminjam
     while (current != NULL) {
         const char* prioritas_str;
-        // Konversi prioritas ke string
         switch (current->prioritas) {
             case DOSEN: prioritas_str = "Dosen"; break;
             case MAHASISWA: prioritas_str = "Mahasiswa"; break;
@@ -115,47 +119,50 @@ void tampilkanAntrian(const AntrianPeminjam *aq) {
     }
 }
 
-// Fungsi untuk mencari peminjam berdasarkan buku
+/**
+ * Fungsi untuk mencari peminjam berdasarkan buku
+ * Mengembalikan pointer ke peminjam jika ditemukan
+ */
 PeminjamNode* cariPeminjamByBuku(AntrianPeminjam *aq, Buku* buku) {
     PeminjamNode* current = aq->head;
     
-    // Iterasi untuk mencari peminjam yang meminjam buku tertentu
     while (current != NULL) {
         if (current->buku == buku) {
-            return current;  // Mengembalikan peminjam jika ditemukan
+            return current;
         }
         current = current->next;
     }
     
-    return NULL;  // Mengembalikan NULL jika tidak ditemukan
+    return NULL;
 }
 
-// Fungsi untuk menghapus peminjam dari antrian
+/**
+ * Fungsi untuk menghapus peminjam dari antrian
+ * Mengembalikan 1 jika berhasil, 0 jika gagal
+ */
 int hapusPeminjam(AntrianPeminjam *aq, const char *nama, Buku* buku) {
     PeminjamNode* current = aq->head;
+    PeminjamNode* prev = NULL;
     
-    // Iterasi untuk mencari peminjam yang akan dihapus
     while (current != NULL) {
         if (strcmp(current->nama, nama) == 0 && current->buku == buku) {
-            // Hapus peminjam dari antrian
-            if (current->prev != NULL) {
-                current->prev->next = current->next;
-            } else {
+            if (prev == NULL) {
                 aq->head = current->next;
-            }
-            
-            if (current->next != NULL) {
-                current->next->prev = current->prev;
             } else {
-                aq->tail = current->prev;
+                prev->next = current->next;
             }
             
-            free(current);  // Bebaskan memori peminjam
-            aq->size--;     // Decrement ukuran antrian
-            return 1;       // Mengembalikan 1 untuk menandakan sukses
+            if (current == aq->tail) {
+                aq->tail = prev;
+            }
+            
+            free(current);
+            aq->size--;
+            return 1;
         }
+        prev = current;
         current = current->next;
     }
     
-    return 0;  // Mengembalikan 0 jika peminjam tidak ditemukan
+    return 0;
 }

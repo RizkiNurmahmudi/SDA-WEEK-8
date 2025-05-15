@@ -3,14 +3,12 @@
 #include <stdlib.h>
 #include "perpustakaan.h"
 
-// Fungsi untuk inisialisasi perpustakaan
 void initPerpustakaan(Perpustakaan *p) {
     initBuku(&p->db);      // Inisialisasi daftar buku
     initAntrian(&p->aq);   // Inisialisasi antrian peminjam
     p->history_count = 0;  // Inisialisasi jumlah history
 }
 
-// Fungsi untuk menambah buku ke perpustakaan
 void tambahBukuPerpus(Perpustakaan *p, const char *judul, int stok) {
     if (!tambahBuku(&p->db, judul, stok)) {
         printf("Gagal menambah buku. Mungkin stok penuh.\n");
@@ -28,7 +26,10 @@ void tambahBukuPerpus(Perpustakaan *p, const char *judul, int stok) {
     printf("Buku '%s' berhasil ditambahkan dengan stok %d\n", judul, stok);
 }
 
-// Fungsi untuk mendaftarkan peminjam
+/**
+ * Fungsi untuk mendaftarkan peminjam
+ * Mencari buku terlebih dahulu, lalu menambahkan ke antrian
+ */
 void daftarPeminjam(Perpustakaan *p, const char *nama, Prioritas prioritas, const char *judul_buku) {
     // Cari buku yang ingin dipinjam
     Buku* buku = cariBuku(&p->db, judul_buku);
@@ -58,7 +59,10 @@ void daftarPeminjam(Perpustakaan *p, const char *nama, Prioritas prioritas, cons
            nama, judul_buku, prioritas);
 }
 
-// Fungsi untuk memproses peminjaman buku
+/**
+ * Fungsi untuk memproses peminjaman buku
+ * Mengeluarkan peminjam dengan prioritas tertinggi dari antrian
+ */
 void prosesPeminjaman(Perpustakaan *p, const char *judul_buku) {
     // Cari buku yang ingin dipinjam
     Buku* buku = cariBuku(&p->db, judul_buku);
@@ -114,7 +118,10 @@ void prosesPeminjaman(Perpustakaan *p, const char *judul_buku) {
     free(peminjam);
 }
 
-// Fungsi untuk memproses pengembalian buku
+/**
+ * Fungsi untuk memproses pengembalian buku
+ * Meningkatkan stok tersedia buku yang dikembalikan
+ */
 void prosesPengembalian(Perpustakaan *p, const char *nama, const char *judul_buku) {
     // Cari buku yang dikembalikan
     Buku* buku = cariBuku(&p->db, judul_buku);
@@ -149,7 +156,10 @@ void prosesPengembalian(Perpustakaan *p, const char *nama, const char *judul_buk
     printf("%s berhasil mengembalikan buku %s\n", nama, judul_buku);
 }
 
-// Fungsi untuk menampilkan status perpustakaan
+/**
+ * Fungsi untuk menampilkan status perpustakaan
+ * Menampilkan daftar buku, antrian peminjam, dan history terakhir
+ */
 void tampilkanStatusPerpustakaan(const Perpustakaan *p) {
     printf("\n=== STATUS PERPUSTAKAAN ===\n");
     

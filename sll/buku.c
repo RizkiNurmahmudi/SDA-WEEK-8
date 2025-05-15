@@ -3,117 +3,124 @@
 #include <string.h>
 #include "buku.h"
 
-// Fungsi untuk inisialisasi daftar buku
+
 void initBuku(DaftarBuku *db) {
-    db->head = NULL;  // Set head ke NULL (daftar kosong)
-    db->tail = NULL;  // Set tail ke NULL (daftar kosong)
-    db->jumlah = 0;   // Inisialisasi jumlah buku ke 0
+    db->head = NULL;
+    db->jumlah = 0;
 }
 
-// Fungsi untuk menambahkan buku baru ke daftar
+/**
+ * Fungsi untuk menambahkan buku baru ke daftar (insert at end)
+ * Mengembalikan 1 jika berhasil, 0 jika gagal
+ */
 int tambahBuku(DaftarBuku *db, const char *judul, int stok) {
     // Alokasi memori untuk buku baru
     Buku* newBuku = (Buku*)malloc(sizeof(Buku));
     if (newBuku == NULL) {
-        return 0;  // Mengembalikan 0 jika alokasi gagal
+        return 0;  // Alokasi gagal
     }
     
     // Mengisi data buku baru
-    strncpy(newBuku->judul, judul, MAX_JUDUL - 1);  // Salin judul buku
-    newBuku->judul[MAX_JUDUL - 1] = '\0';           // Pastikan string diakhiri NULL
-    newBuku->stok = stok;                           // Set stok total
-    newBuku->stok_tersedia = stok;                  // Set stok tersedia
-    newBuku->prev = NULL;                           // Inisialisasi pointer prev
-    newBuku->next = NULL;                           // Inisialisasi pointer next
+    strncpy(newBuku->judul, judul, MAX_JUDUL - 1);
+    newBuku->judul[MAX_JUDUL - 1] = '\0';
+    newBuku->stok = stok;
+    newBuku->stok_tersedia = stok;
+    newBuku->next = NULL;
     
     // Menambahkan buku ke daftar
     if (db->head == NULL) {
-        // Jika daftar kosong, buku baru menjadi head dan tail
+        // Jika daftar kosong, buku baru menjadi head
         db->head = newBuku;
-        db->tail = newBuku;
     } else {
-        // Jika daftar tidak kosong, tambahkan di akhir
-        db->tail->next = newBuku;  // Link dari tail ke buku baru
-        newBuku->prev = db->tail;  // Link prev buku baru ke tail lama
-        db->tail = newBuku;        // Update tail ke buku baru
-    }
-    
-    db->jumlah++;  // Increment jumlah buku
-    return 1;      // Mengembalikan 1 untuk menandakan sukses
-}
-
-// Fungsi untuk mencari buku berdasarkan judul
-Buku* cariBuku(DaftarBuku *db, const char *judul) {
-    Buku* current = db->head;  // Mulai pencarian dari head
-    
-    // Iterasi melalui semua buku dalam daftar
-    while (current != NULL) {
-        // Bandingkan judul buku dengan yang dicari
-        if (strcmp(current->judul, judul) == 0) {
-            return current;  // Mengembalikan pointer buku jika ditemukan
+        // Jika daftar tidak kosong, cari node terakhir
+        Buku* current = db->head;
+        while (current->next != NULL) {
+            current = current->next;
         }
-        current = current->next;  // Pindah ke buku berikutnya
+        current->next = newBuku;  // Tambahkan di akhir
     }
     
-    return NULL;  // Mengembalikan NULL jika tidak ditemukan
+    db->jumlah++;
+    return 1;
 }
 
-// Fungsi untuk menampilkan daftar buku
+/**
+ * Fungsi untuk mencari buku berdasarkan judul
+ * Mengembalikan pointer ke buku jika ditemukan, NULL jika tidak
+ */
+Buku* cariBuku(DaftarBuku *db, const char *judul) {
+    Buku* current = db->head;
+    
+    while (current != NULL) {
+        if (strcmp(current->judul, judul) == 0) {
+            return current;
+        }
+        current = current->next;
+    }
+    
+    return NULL;
+}
+
+/**
+ * Fungsi untuk menampilkan daftar buku
+ */
 void tampilkanBuku(const DaftarBuku *db) {
     printf("Daftar Buku:\n");
-    Buku* current = db->head;  // Mulai dari head
+    Buku* current = db->head;
     
-    // Iterasi dan tampilkan semua buku
     while (current != NULL) {
         printf("- %s (Stok: %d, Tersedia: %d)\n", 
                current->judul, 
                current->stok, 
                current->stok_tersedia);
-        current = current->next;  // Pindah ke buku berikutnya
+        current = current->next;
     }
 }
 
-// Fungsi untuk memproses peminjaman buku
+/**
+ * Fungsi untuk memproses peminjaman buku
+ * Mengurangi stok tersedia jika berhasil
+ * Mengembalikan 1 jika berhasil, 0 jika gagal
+ */
 int pinjamBuku(DaftarBuku *db, const char *judul) {
-    // Cari buku berdasarkan judul
     Buku* buku = cariBuku(db, judul);
     
-    // Periksa apakah buku ditemukan dan stok tersedia
     if (buku == NULL || buku->stok_tersedia <= 0) {
-        return 0;  // Mengembalikan 0 jika gagal
+        return 0;
     }
     
-    buku->stok_tersedia--;  // Kurangi stok tersedia
-    return 1;               // Mengembalikan 1 untuk menandakan sukses
+    buku->stok_tersedia--;
+    return 1;
 }
 
-// Fungsi untuk memproses pengembalian buku
+/**
+ * Fungsi untuk memproses pengembalian buku
+ * Menambah stok tersedia jika berhasil
+ * Mengembalikan 1 jika berhasil, 0 jika gagal
+ */
 int kembalikanBuku(DaftarBuku *db, const char *judul) {
-    // Cari buku berdasarkan judul
     Buku* buku = cariBuku(db, judul);
     
-    // Periksa apakah buku ditemukan dan stok belum penuh
     if (buku == NULL || buku->stok_tersedia >= buku->stok) {
-        return 0;  // Mengembalikan 0 jika gagal
+        return 0;
     }
     
-    buku->stok_tersedia++;  // Tambah stok tersedia
-    return 1;               // Mengembalikan 1 untuk menandakan sukses
+    buku->stok_tersedia++;
+    return 1;
 }
 
-// Fungsi untuk membebaskan memori yang digunakan daftar buku
+/**
+ * Fungsi untuk membebaskan memori yang digunakan daftar buku
+ */
 void freeBuku(DaftarBuku *db) {
-    Buku* current = db->head;  // Mulai dari head
+    Buku* current = db->head;
     
-    // Iterasi dan bebaskan semua buku
     while (current != NULL) {
-        Buku* temp = current;       // Simpan pointer buku saat ini
-        current = current->next;    // Pindah ke buku berikutnya
-        free(temp);                 // Bebaskan memori buku saat ini
+        Buku* temp = current;
+        current = current->next;
+        free(temp);
     }
     
-    // Reset daftar buku
     db->head = NULL;
-    db->tail = NULL;
     db->jumlah = 0;
 }

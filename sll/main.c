@@ -3,7 +3,6 @@
 #include "perpustakaan.h"
 #include "menu.h"
 
-// Fungsi utama program
 int main() {
     Perpustakaan perpus;
     

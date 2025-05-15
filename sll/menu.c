@@ -5,7 +5,7 @@
 #include "perpustakaan.h"
 #include "menu.h"
 
-// Fungsi untuk membersihkan layar
+
 void clearScreen() {
 #ifdef _WIN32
     system("cls");  // Untuk Windows
@@ -14,24 +14,32 @@ void clearScreen() {
 #endif
 }
 
-// Fungsi untuk membersihkan buffer input
+/**
+ * Fungsi untuk membersihkan buffer input
+ * Mencegah masalah input yang tersisa di buffer
+ */
 void clearInputBuffer() {
     int c;
     while ((c = getchar()) != '\n' && c != EOF) {}
 }
 
-// Fungsi untuk menampilkan status perpustakaan
+/**
+ * Fungsi untuk menampilkan status perpustakaan
+ * Format yang lebih rapi dan informatif
+ */
 void tampilkanDisplay(const Perpustakaan *perpus) {
     printf("=== SISTEM PERPUSTAKAAN ===\n\n");
     
-    // Tampilkan daftar buku
+    // Tampilkan daftar buku dengan format tabel
     printf("[Daftar Buku]\n");
     if (perpus->db.jumlah == 0) {
         printf("Belum ada buku terdaftar\n");
     } else {
+        printf("%-40s %-10s %-10s\n", "Judul", "Total", "Tersedia");
+        printf("------------------------------------------------------------\n");
         Buku* current = perpus->db.head;
         while (current != NULL) {
-            printf("- %s (Total: %d, Tersedia: %d)\n",
+            printf("%-40s %-10d %-10d\n",
                    current->judul,
                    current->stok,
                    current->stok_tersedia);
@@ -39,11 +47,13 @@ void tampilkanDisplay(const Perpustakaan *perpus) {
         }
     }
     
-    // Tampilkan antrian peminjam
+    // Tampilkan antrian peminjam dengan format tabel
     printf("\n[Antrian Peminjam]\n");
     if (perpus->aq.size == 0) {
         printf("Tidak ada antrian peminjam\n");
     } else {
+        printf("%-20s %-15s %-40s\n", "Nama", "Prioritas", "Buku");
+        printf("------------------------------------------------------------\n");
         PeminjamNode* current = perpus->aq.head;
         while (current != NULL) {
             const char *prioritas_str;
@@ -53,7 +63,7 @@ void tampilkanDisplay(const Perpustakaan *perpus) {
                 case UMUM: prioritas_str = "Umum"; break;
                 default: prioritas_str = "Tidak diketahui";
             }
-            printf("- %s (Prioritas: %s) - Buku: %s\n",
+            printf("%-20s %-15s %-40s\n",
                    current->nama,
                    prioritas_str,
                    current->buku->judul);
@@ -63,7 +73,9 @@ void tampilkanDisplay(const Perpustakaan *perpus) {
     printf("\n");
 }
 
-// Fungsi untuk menampilkan menu utama
+/**
+ * Fungsi untuk menampilkan menu utama
+ */
 void tampilkanMenu() {
     printf("=== MENU UTAMA ===\n");
     printf("1. Tambah Buku Baru\n");
@@ -75,7 +87,10 @@ void tampilkanMenu() {
     printf("Pilihan: ");
 }
 
-// Fungsi untuk memproses pilihan menu
+/**
+ * Fungsi utama untuk memproses menu
+ * Menangani input dan memanggil fungsi yang sesuai
+ */
 void prosesMenu(Perpustakaan *perpus) {
     int pilihan;
     char judul[MAX_JUDUL], nama[MAX_NAMA];
@@ -86,7 +101,7 @@ void prosesMenu(Perpustakaan *perpus) {
         tampilkanDisplay(perpus);
         tampilkanMenu();
         
-        // Baca pilihan menu
+        // Baca pilihan menu dengan validasi
         if (scanf("%d", &pilihan) != 1) {
             printf("Input tidak valid! Harap masukkan angka.\n");
             clearInputBuffer();
@@ -105,6 +120,12 @@ void prosesMenu(Perpustakaan *perpus) {
                     break;
                 }
                 judul[strcspn(judul, "\n")] = '\0';
+                
+                // Validasi judul tidak kosong
+                if (strlen(judul) == 0) {
+                    printf("Judul buku tidak boleh kosong!\n");
+                    break;
+                }
 
                 printf("Masukkan jumlah stok: ");
                 if (scanf("%d", &stok) != 1 || stok <= 0) {
@@ -125,6 +146,12 @@ void prosesMenu(Perpustakaan *perpus) {
                     break;
                 }
                 nama[strcspn(nama, "\n")] = '\0';
+                
+                // Validasi nama tidak kosong
+                if (strlen(nama) == 0) {
+                    printf("Nama peminjam tidak boleh kosong!\n");
+                    break;
+                }
 
                 printf("Masukkan judul buku yang ingin dipinjam: ");
                 if (fgets(judul, sizeof(judul), stdin) == NULL) {
@@ -209,7 +236,9 @@ void prosesMenu(Perpustakaan *perpus) {
                     if (perpus->history_count < MAX_HISTORY) {
                         snprintf(perpus->history[perpus->history_count].aksi, 50, "Batalkan antrian");
                         strncpy(perpus->history[perpus->history_count].nama, nama, MAX_NAMA - 1);
+                        perpus->history[perpus->history_count].nama[MAX_NAMA - 1] = '\0';
                         strncpy(perpus->history[perpus->history_count].buku, judul, MAX_JUDUL - 1);
+                        perpus->history[perpus->history_count].buku[MAX_JUDUL - 1] = '\0';
                         perpus->history[perpus->history_count].prioritas = UMUM;
                         perpus->history_count++;
                     }
@@ -225,7 +254,7 @@ void prosesMenu(Perpustakaan *perpus) {
             }
                 
             default:
-                printf("Pilihan tidak valid! Silakan pilih 0-6.\n");
+                printf("Pilihan tidak valid! Silakan pilih 0-5.\n");
         }
         
         if (pilihan != 0) {
